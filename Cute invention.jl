@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 42a780fe-1659-4d9b-b900-3321ce025dd6
-using Luxor, PlutoUI, Colors, SimpleWeightedGraphs, Graphs, GraphPlot, Plots, GLMakie, LinearAlgebra
+using Luxor, PlutoUI, Colors, SimpleWeightedGraphs, Graphs, GraphPlot
 
 # ╔═╡ b03a4559-a960-4b56-97ed-a144407ba2eb
 using GeometryTypes
@@ -751,6 +751,8 @@ end
 end
 
 # ╔═╡ eb0c03ee-62c0-4cb9-b52f-1b1830eaa0a4
+# ╠═╡ skip_as_script = true
+#=╠═╡
 function arc2r(scene, center, pt1, pt2; radius=nothing, linewidth=2, color=:black)
     if radius === nothing
         radius = norm(pt1 .- center)
@@ -767,8 +769,11 @@ function arc2r(scene, center, pt1, pt2; radius=nothing, linewidth=2, color=:blac
     
     arc!(scene, Point2f0(center...), radius, θ1, θ2; linewidth, color)
 end
+  ╠═╡ =#
 
 # ╔═╡ 292a52e9-7b90-4687-852d-b9eb5ad95fa3
+# ╠═╡ skip_as_script = true
+#=╠═╡
 function plot_farey_graph(ax, m::Int, radius::Float64,n)
     
 	if n == 1
@@ -875,8 +880,11 @@ function plot_farey_graph(ax, m::Int, radius::Float64,n)
     Makie.xlims!(ax, -radius * 1.2, radius * 1.2)
     Makie.ylims!(ax, -radius * 1.2, radius * 1.2)
 end
+  ╠═╡ =#
 
 # ╔═╡ 3ac4dadf-28e1-4f08-8ebd-ebda389422b6
+# ╠═╡ skip_as_script = true
+#=╠═╡
 
 function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
     
@@ -984,8 +992,12 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
     Makie.xlims!(ax, -radius * 1.2, radius * 1.2)
     Makie.ylims!(ax, -radius * 1.2, radius * 1.2)
 end
+  ╠═╡ =#
 
 # ╔═╡ 5f4f446f-306a-4094-b14d-86969a6fe111
+# ╠═╡ disabled = true
+# ╠═╡ skip_as_script = true
+#=╠═╡
 function interactive_farey_graph()
     fig = Figure(size = (1920,1080))
     ax = Axis(fig[1, 1:3], aspect = DataAspect())  # Span the axis across more space
@@ -1025,9 +1037,12 @@ function interactive_farey_graph()
     # Enable zooming and panning
     display(fig)
 end
+  ╠═╡ =#
 
 # ╔═╡ b1d69da2-0592-43f6-9734-06ee3d887311
-interactive_farey_graph()
+#=╠═╡
+
+  ╠═╡ =#
 
 # ╔═╡ d3bc6551-c75c-4ae7-822c-68d9cf45c73f
 
