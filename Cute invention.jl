@@ -395,8 +395,11 @@ function equi_angle(a::Set{Rational{Int}}) #gives the angle but if it were to be
 	end
 end
 
+# ╔═╡ 3eb90c0f-2dda-4194-b56a-5ca00cac3f34
+equi_angle(Set([0//1]))
+
 # ╔═╡ 2dfdbe63-02a0-471b-9147-fb0416d80d3e
-equi_angle(Set([Rational(0,1)]))
+equi_angle(Set([Rational(-1,2)]))
 
 # ╔═╡ 74e3475c-f443-417c-87e0-104a9cf02429
 continued_fraction(1//1)
@@ -446,6 +449,48 @@ end
 # ╔═╡ 0244b736-6476-4763-afa4-447b945978cc
 
 
+# ╔═╡ 845c9a01-ff20-4447-ad31-f352e4c57e90
+function centroid(x,a::Luxor.Point, b::Luxor.Point)
+	x_c,y_c = a 
+	x_p,y_p = b
+	return Luxor.Point(x_c,y_c)
+end 
+
+# ╔═╡ 488f6829-c663-4b78-8837-db0187babfeb
+centroid(200,Luxor.Point(200,300),Luxor.Point(450,100))
+
+# ╔═╡ fdcc7a03-b5c0-45d1-957d-c6e023d0c8e6
+function ehehe(a,b)
+	p1_x, p1_y = a 
+	p3_x, p3_y = b 
+	if p1_y == 0
+            p1_y = 10^(-10)
+    end
+	#println(p1_y*p3_x-p3_y*p1_x)
+	ehehe_x = (p1_y*(p3_x^2) - p3_y*(p1_x^2)+(p3_y-p1_y)p3_y*p1_y)/(p1_y*p3_x - p3_y*p1_x)
+	ehehe_y = -(p1_x/p1_y)*ehehe_x +((p1_x^2)/p1_y) + p1_y
+	return (Luxor.Point(ehehe_x,ehehe_y))
+end
+
+# ╔═╡ d015c4a4-6e88-4f8d-a014-54a27370cd5c
+triangleF(2)
+
+# ╔═╡ 01b4974d-bf79-4dce-84ea-3550be944839
+triangleF(1)
+
+# ╔═╡ 7774ec95-5a58-4f4a-837f-420a3a5caa93
+FareyGraph(1)
+
+# ╔═╡ ccb9dad7-4cf2-468e-a18e-591bf43fe1ad
+FareyGraph(1)[2]
+
+# ╔═╡ 2c07c37c-5c10-4494-9e29-4f48941d02b6
+function circular_mean(angles::Vector{Float64}) 
+	s = sum(sin.(angles)) 
+	c = sum(cos.(angles)) 
+	return atan(s, c) 
+	end
+
 # ╔═╡ 892df58b-fc73-4d63-8d64-455d015af3cc
 function centertriangle(triangle,G)
 	DictG = G[2]
@@ -455,8 +500,8 @@ function centertriangle(triangle,G)
 	p2_y = my_radius * sin(equi_angle(DictG[triangle[2]]))
 	p3_x = my_radius * cos(equi_angle(DictG[triangle[3]]))
 	p3_y = my_radius * sin(equi_angle(DictG[triangle[3]]))
-	center_x = (p1_x + p2_x + p3_x)/3
-	center_y = (p1_y + p2_y + p3_y)/3
+	center_x = (p1_x + p2_x + p3_x)/4
+	center_y = (p1_y + p2_y + p3_y)/4
 	centerT = Luxor.Point(center_x,center_y)
 	return centerT
 	 
@@ -465,9 +510,69 @@ end
 # ╔═╡ 2704e360-a0f7-40b0-b8e2-5f138a6ba3e0
 centertriangle([1,2,4],FareyGraph(2))
 
+# ╔═╡ cf7a95e7-ad8b-4d8d-965c-dfc1b3ba95a2
+#BASED CENTER TRIANGLE FORMULA NEW WOW SO COOOL 
+#OMG i am so locked in wtf  
+#
+#
+function centertriangle2(triangle,G)
+	#Luxor.origin()
+	DictG = G[2]
+	t = sort([first(DictG[triangle[1]]),first(DictG[triangle[2]]),first(DictG[triangle[3]])])
+	if triangle in triangleF(1)
+		return centertriangle(triangle,G)
+	end
+	s = 1
+	neg_count = sum(first(DictG[t]) < 0 ? 1 : 0 for t in triangle)
+	if neg_count >=2
+		t = [-t[1],-t[2],-t[3]]
+		s = -1
+	end
+	M = [equi_angle(Set(t[1])),equi_angle(Set(t[2])),equi_angle(Set(t[3]))] 
+	
+	M = sort(M)  
+	p1_x = my_radius * cos(M[1])
+	p1_y = my_radius * sin(M[1])	
+	p1 = Luxor.Point(p1_x,p1_y)
+	p2_x = my_radius * cos(M[2])
+	p2_y = my_radius * sin(M[2])
+	p2 = Luxor.Point(p2_x,p2_y)
+	p3_x = my_radius * cos(M[3])
+	p3_y = my_radius * sin(M[3])
+	p3 = Luxor.Point(p3_x,p3_y)
+	M_1 = [circular_mean([M[1],M[2]]),circular_mean([M[2],M[3]])]
+	println(M_1)
+	pm1_x = my_radius *cos(M_1[1])
+	pm1_y = my_radius *sin(M_1[1])
+	pm1 = Luxor.Point(pm1_x,pm1_y)
+	pm2_x = my_radius *cos(M_1[2])
+	pm2_y = my_radius *sin(M_1[2])
+	pm2 = Luxor.Point(pm2_x,pm2_y)
+	M_ehehe = [ehehe(p1,p2),ehehe(p2,p3)]
+	radius = distance(ehehe(p1,p2),p2)
+	radius2 = distance(ehehe(p1,p2),p1)
+	rr = distance(ehehe(p1,p2),Luxor.Point(0,0))
+	Mm1_x = (rr-radius) *cos(M_1[1])
+	Mm1_y = (rr-radius) *sin(M_1[1])
+	
+	Mm2_x = (rr-radius) *cos(M_1[2])
+	Mm2_y = (rr-radius) *sin(M_1[2])
+	#println(M_ehehe)
+	
+	println(neg_count)
+	println(t[2]) 
+	println(M_1[1],M_1[2],M_1[2])
+	return Luxor.Point((rr-radius*5/4)*cos(circular_mean(M)),(rr-radius*5/4)*sin(s*circular_mean(M)))
+	
+	
+	#return Luxor.Point((rr-radius)*cos((mod(M_1[1]+M_1[2],2π))/2),(rr-radius)*sin(sign(M_1[1]+M_1[2])*(mod(M_1[1]+M_1[2],2π))/2))
+
+
+end
+
 # ╔═╡ e044aa46-f754-4e02-a917-f982ac7a66c1
 function get_or_add_vertex!(G, vertex_dict, triangle, Farey)
-    center = centertriangle(triangle, Farey)
+    center = centertriangle2(triangle, Farey)
 
     for (idx, points) in vertex_dict
         if any(≈(center), points)
@@ -480,22 +585,20 @@ function get_or_add_vertex!(G, vertex_dict, triangle, Farey)
 end
 
 
+# ╔═╡ 1fd18e9e-1e57-4e20-89b6-a4751e7da25c
+centertriangle2([5,1,2],FareyGraph(2))
+
 # ╔═╡ ce8537f8-3ce4-4aaf-9ce5-d330fc08698a
 function equitopograph(m::Int,G)
 	T = []
 	DictG = G[2]
 	for i in range(1,m)
+		
 		for t in triangleF(i) #loops over every new triangle 
-			p1_x = my_radius * cos(equi_angle(DictG[t[1]]))
-			p1_y = my_radius * sin(equi_angle(DictG[t[1]]))
-			p2_x = my_radius * cos(equi_angle(DictG[t[2]]))
-			p2_y = my_radius * sin(equi_angle(DictG[t[2]]))
-			p3_x = my_radius * cos(equi_angle(DictG[t[3]]))
-			p3_y = my_radius * sin(equi_angle(DictG[t[3]]))
-			center_x = (p1_x + p2_x + p3_x)/3
-			center_y = (p1_y + p2_y + p3_y)/3
-			centerT = Luxor.Point(center_x,center_y)
+			
+			centerT = centertriangle2(t,G)
 			push!(T,centerT)
+			
 		end 
 	end 
 	return T
@@ -522,8 +625,8 @@ function graphtopo(m::Int)
 		for t in B
 			for p in A  
 				if length(intersect(t,p)) == 2
-					c_i = centertriangle(t,Farey) #existing vertex
-					c_j = centertriangle(p,Farey) # new vertex
+					c_i = centertriangle2(t,Farey) #existing vertex
+					c_j = centertriangle2(p,Farey) # new vertex
 					v_i = get_or_add_vertex!(G, vertex_dict, t, Farey)
 					v_j = get_or_add_vertex!(G, vertex_dict, p, Farey)
 
@@ -701,14 +804,22 @@ end
 # ╔═╡ 7af51bfa-a1cf-4c82-95f4-05a22d58394c
 
 
-# ╔═╡ 845c9a01-ff20-4447-ad31-f352e4c57e90
+# ╔═╡ 5a4c136f-5010-46ce-a762-7ee8c4e111fd
+begin 
+a = Luxor.Point(2,3)
+b = Luxor.Point(4,5)
+print(centroid(1,a,b))
+end
+
+# ╔═╡ 75716b9c-e00c-4557-b509-aaf6e3e50100
+println(centertriangle(triangleF(1)[1],FareyGraph(1)),centertriangle(triangleF(1)[2],FareyGraph(1)))
 
 
 # ╔═╡ 5c263bac-5fb6-49d6-b38d-2b067c4517e7
 function plot_farey_graph_with_edges2equi(m::Int,G)
     @svg begin 
 	
-    Drawing(1300, 1300)
+    Drawing(1500, 1500)
     Luxor.origin()
     background("antiquewhite")
     DictG = G[2]
@@ -724,24 +835,14 @@ function plot_farey_graph_with_edges2equi(m::Int,G)
 	line(c0,cp,:stroke)
     i = 1
     Topo = equitopograph(m,G)
-	Topo = topograph(m,G)
+	#Topo = topograph(m,G)
 	T,DictT = graphtopo(m)
-	for e in edges(T)
-		c1 = DictT[src(e)]
-		c2 = DictT[dst(e)]
-		println(first(c1))
-		println(first(c2))
-		setcolor("green")
-		setline(5)
-		line(first(c1),first(c2),:stroke)
-		
-		
-	end 
-	setline(1)
+	
+	setline(3)
     for t in Topo #loops over every new triangle 
 		
 		setcolor("red")
-		circle(t,3, :fill)
+		#circle(t,3, :fill)
 		setcolor("black")
 	end
     for e in Edges
@@ -807,6 +908,20 @@ function plot_farey_graph_with_edges2equi(m::Int,G)
 
     sethue("black")
     end
+	#topographe :D 
+	
+	
+	for e in edges(T)
+		c1 = DictT[src(e)]
+		c2 = DictT[dst(e)]
+		println(first(c1))
+		println(first(c2))
+		setcolor("red")
+		
+		line(first(c1),first(c2),:stroke)
+		setcolor("black")
+		
+	end 
 	for (k, pts) in DictG
         angle_rad = equi_angle(pts)
         coord_x = my_radius * cos(angle_rad)
@@ -999,6 +1114,26 @@ function plot_farey_graph_with_edges(m::Int)
     finish()
 end
 end
+
+# ╔═╡ 7575e497-e2c4-4526-8c88-f99509a7270a
+@bind m PlutoUI.Slider(1:20)
+
+# ╔═╡ a50a49c4-a0a2-4a10-ae8d-456d14570490
+begin 
+	T,DictT = graphtopo(m)
+	for e in edges(T)
+		c1 = DictT[src(e)]
+		c2 = DictT[dst(e)]
+		println(c1,c2)
+	end 
+end
+
+# ╔═╡ ea67c972-f01a-47b1-8e27-0ca81c71e839
+plot_farey_graph_with_edges2equi(m,FareyGraph(m))
+
+# ╔═╡ 6456806b-34c5-4a10-a5d3-a0a7277164b9
+# ╠═╡ show_logs = false
+plot_farey_graph_with_edges2(m,FareyGraph(m))
 
 # ╔═╡ eb0c03ee-62c0-4cb9-b52f-1b1830eaa0a4
 function arc2r(scene, center, pt1, pt2; radius=nothing, linewidth=2, color=:black)
@@ -1282,37 +1417,10 @@ interactive_farey_graph()
 # ╔═╡ d3bc6551-c75c-4ae7-822c-68d9cf45c73f
 
 
-# ╔═╡ a50a49c4-a0a2-4a10-ae8d-456d14570490
-#=╠═╡
-begin 
-	T,DictT = graphtopo(m)
-	for e in edges(T)
-		c1 = DictT[src(e)]
-		c2 = DictT[dst(e)]
-		println(c1,c2)
-	end 
-end
-  ╠═╡ =#
-
-# ╔═╡ 6456806b-34c5-4a10-a5d3-a0a7277164b9
-#=╠═╡
-plot_farey_graph_with_edges2(m,FareyGraph(m))
-  ╠═╡ =#
-
-# ╔═╡ ea67c972-f01a-47b1-8e27-0ca81c71e839
-#=╠═╡
-plot_farey_graph_with_edges2equi(m,FareyGraph(m))
-  ╠═╡ =#
-
 # ╔═╡ f329081b-6127-409c-811d-9a055d1ea1ce
 # ╠═╡ disabled = true
 #=╠═╡
 m = 5 
-  ╠═╡ =#
-
-# ╔═╡ 7575e497-e2c4-4526-8c88-f99509a7270a
-#=╠═╡
-@bind m PlutoUI.Slider(1:20)
   ╠═╡ =#
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -3373,6 +3481,7 @@ version = "1.4.1+2"
 # ╠═3055b90b-f8fa-4b97-a9b9-3b9c0f5816b1
 # ╠═271e24c9-62ba-4a19-8ceb-5c1343e6e00c
 # ╠═0b7fde22-ed52-4648-8ee8-e02b3dd99066
+# ╠═3eb90c0f-2dda-4194-b56a-5ca00cac3f34
 # ╠═2dfdbe63-02a0-471b-9147-fb0416d80d3e
 # ╠═f159435d-f940-4ffa-aafb-c443ec274ce7
 # ╠═b414a07b-2f7a-4fe2-b83a-2ee34cd90ab2
@@ -3393,6 +3502,16 @@ version = "1.4.1+2"
 # ╠═de156a84-159f-45a1-991d-766a15c9c281
 # ╠═0244b736-6476-4763-afa4-447b945978cc
 # ╠═74941e62-1165-4b3d-b857-ab5c59f7bff7
+# ╠═845c9a01-ff20-4447-ad31-f352e4c57e90
+# ╠═488f6829-c663-4b78-8837-db0187babfeb
+# ╠═fdcc7a03-b5c0-45d1-957d-c6e023d0c8e6
+# ╠═d015c4a4-6e88-4f8d-a014-54a27370cd5c
+# ╠═01b4974d-bf79-4dce-84ea-3550be944839
+# ╠═7774ec95-5a58-4f4a-837f-420a3a5caa93
+# ╠═ccb9dad7-4cf2-468e-a18e-591bf43fe1ad
+# ╠═1fd18e9e-1e57-4e20-89b6-a4751e7da25c
+# ╠═2c07c37c-5c10-4494-9e29-4f48941d02b6
+# ╠═cf7a95e7-ad8b-4d8d-965c-dfc1b3ba95a2
 # ╠═892df58b-fc73-4d63-8d64-455d015af3cc
 # ╠═ce8537f8-3ce4-4aaf-9ce5-d330fc08698a
 # ╠═fc843fa7-0fd5-4a40-b1cb-09e4d1af9d90
@@ -3401,13 +3520,14 @@ version = "1.4.1+2"
 # ╠═a50a49c4-a0a2-4a10-ae8d-456d14570490
 # ╠═2a04392e-7edf-4b95-8a20-449db0d52a9f
 # ╠═7af51bfa-a1cf-4c82-95f4-05a22d58394c
-# ╠═845c9a01-ff20-4447-ad31-f352e4c57e90
+# ╠═5a4c136f-5010-46ce-a762-7ee8c4e111fd
+# ╠═75716b9c-e00c-4557-b509-aaf6e3e50100
 # ╠═5c263bac-5fb6-49d6-b38d-2b067c4517e7
 # ╟─281c7482-bd09-488e-b28f-a086b8ba3810
 # ╟─16a0c42f-63da-40ae-9fc7-a2eccae6b34a
 # ╠═7575e497-e2c4-4526-8c88-f99509a7270a
-# ╟─6456806b-34c5-4a10-a5d3-a0a7277164b9
 # ╠═ea67c972-f01a-47b1-8e27-0ca81c71e839
+# ╠═6456806b-34c5-4a10-a5d3-a0a7277164b9
 # ╟─b03a4559-a960-4b56-97ed-a144407ba2eb
 # ╠═eb0c03ee-62c0-4cb9-b52f-1b1830eaa0a4
 # ╠═292a52e9-7b90-4687-852d-b9eb5ad95fa3
