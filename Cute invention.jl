@@ -19,6 +19,9 @@ end
 # ╔═╡ 42a780fe-1659-4d9b-b900-3321ce025dd6
 using Luxor, PlutoUI, Colors, SimpleWeightedGraphs, Graphs, GraphPlot, Plots, GLMakie, LinearAlgebra
 
+# ╔═╡ eca31c81-2550-4173-a3e9-54cc846c59bf
+using Graphics:center 
+
 # ╔═╡ b03a4559-a960-4b56-97ed-a144407ba2eb
 using GeometryTypes
 
@@ -55,20 +58,28 @@ end
 
 # ╔═╡ 45bfc816-5d43-4e01-bc92-21c8d84875b8
 function create_custom_Tgraph()
-	g = SimpleGraph(0)
-	vertex_value = Dict{Int,Set{Luxor.Point}}()
-	return g, vertex_value
+    g = SimpleGraph(0)
+    vertex_value = Dict{Int, Set{Luxor.Point}}()
+    vertex_kms = Dict{Luxor.Point, Set{Rational{Int}}}()  # New dictionary for fractions
+    return g, vertex_value, vertex_kms
 end
 
 # ╔═╡ 8f8fd768-7865-46b4-9d65-c40a88ca3026
-function add_topovertex!(g::SimpleGraph,vertex_value::Dict{Int,Set{Luxor.Point}},values::Luxor.Point)
- v_index = nv(g) + 1 
+"""
+adds a vertex to the topograph : 
+add_topovertex!(g:Fareygraph(usually),dict : int -> pt in graph, pt coords, triangle)
+"""
+function add_topovertex!(g::SimpleGraph,vertex_values::Dict{Int,Set{Luxor.Point}},value::Luxor.Point,triangle,Farey)
+	Dict = Farey[2]
+ 	v_index = nv(g) + 1 
 	add_vertices!(g,1)
-	vertex_value[v_index] = Set([values]) 
-	return v_index 
+	vertex_values[v_index] = Set([value])
+	fvalstriangles = sort([copysign(first(Dict[v]),1) for v in triangle])
+	return v_index, fvalstriangles[2]
 end 
 
 # ╔═╡ 817a2afb-3845-4cc7-bf9d-cb6f78b50de6
+""" function add_farey_vertex!(g::SimpleWeightedGraph, vertex_value::Dict{Int, Set{Rational{Int}}}, values::Set{Rational{Int}})"""
 function add_farey_vertex!(g::SimpleWeightedGraph, vertex_value::Dict{Int, Set{Rational{Int}}}, values::Set{Rational{Int}})
 	#nv is for number of vertices in ur initial graph
     v_index = nv(g) + 1
@@ -158,6 +169,14 @@ function FareyGraph(n)
         return Graph_n, Value_n,triangles
     end
 end
+
+# ╔═╡ 443470c5-e7a7-4453-922b-d89c9eb6a219
+begin
+	DictG = FareyGraph(2)[2]
+	
+	fvalstriangles = [first(DictG[v]) for v in [1,2,4]]
+	println( sort(fvalstriangles))
+end 
 
 # ╔═╡ b03642c5-1fd3-4be5-9a69-5f0eecaf98ec
 
@@ -492,14 +511,14 @@ function circular_mean(angles::Vector{Float64})
 	end
 
 # ╔═╡ 892df58b-fc73-4d63-8d64-455d015af3cc
-function centertriangle(triangle,G)
+function centertriangle(triangle,G,radius = 600)
 	DictG = G[2]
-	p1_x = my_radius * cos(equi_angle(DictG[triangle[1]]))
-	p1_y = my_radius * sin(equi_angle(DictG[triangle[1]]))		
-	p2_x = my_radius * cos(equi_angle(DictG[triangle[2]]))
-	p2_y = my_radius * sin(equi_angle(DictG[triangle[2]]))
-	p3_x = my_radius * cos(equi_angle(DictG[triangle[3]]))
-	p3_y = my_radius * sin(equi_angle(DictG[triangle[3]]))
+	p1_x = radius * cos(equi_angle(DictG[triangle[1]]))
+	p1_y = radius * sin(equi_angle(DictG[triangle[1]]))		
+	p2_x = radius * cos(equi_angle(DictG[triangle[2]]))
+	p2_y = radius * sin(equi_angle(DictG[triangle[2]]))
+	p3_x = radius * cos(equi_angle(DictG[triangle[3]]))
+	p3_y = radius * sin(equi_angle(DictG[triangle[3]]))
 	center_x = (p1_x + p2_x + p3_x)/4
 	center_y = (p1_y + p2_y + p3_y)/4
 	centerT = Luxor.Point(center_x,center_y)
@@ -515,7 +534,7 @@ centertriangle([1,2,4],FareyGraph(2))
 #OMG i am so locked in wtf  
 #
 #
-function centertriangle2(triangle,G)
+function centertriangle2(triangle,G,radius=600)
 	#Luxor.origin()
 	DictG = G[2]
 	t = sort([first(DictG[triangle[1]]),first(DictG[triangle[2]]),first(DictG[triangle[3]])])
@@ -531,38 +550,40 @@ function centertriangle2(triangle,G)
 	M = [equi_angle(Set(t[1])),equi_angle(Set(t[2])),equi_angle(Set(t[3]))] 
 	
 	M = sort(M)  
-	p1_x = my_radius * cos(M[1])
-	p1_y = my_radius * sin(M[1])	
+	p1_x = radius * cos(M[1])
+	p1_y = radius * sin(M[1])	
 	p1 = Luxor.Point(p1_x,p1_y)
-	p2_x = my_radius * cos(M[2])
-	p2_y = my_radius * sin(M[2])
+	p2_x = radius * cos(M[2])
+	p2_y = radius * sin(M[2])
 	p2 = Luxor.Point(p2_x,p2_y)
-	p3_x = my_radius * cos(M[3])
-	p3_y = my_radius * sin(M[3])
+	p3_x = radius * cos(M[3])
+	p3_y = radius * sin(M[3])
 	p3 = Luxor.Point(p3_x,p3_y)
 	M_1 = [circular_mean([M[1],M[2]]),circular_mean([M[2],M[3]])]
 	println(M_1)
-	pm1_x = my_radius *cos(M_1[1])
-	pm1_y = my_radius *sin(M_1[1])
+	pm1_x = radius *cos(M_1[1])
+	pm1_y = radius *sin(M_1[1])
 	pm1 = Luxor.Point(pm1_x,pm1_y)
-	pm2_x = my_radius *cos(M_1[2])
-	pm2_y = my_radius *sin(M_1[2])
+	pm2_x = radius *cos(M_1[2])
+	pm2_y = radius *sin(M_1[2])
 	pm2 = Luxor.Point(pm2_x,pm2_y)
 	M_ehehe = [ehehe(p1,p2),ehehe(p2,p3)]
-	radius = distance(ehehe(p1,p2),p2)
-	radius2 = distance(ehehe(p1,p2),p1)
+	rad = distance(ehehe(p1,p2),p2)
+	rad2 = distance(ehehe(p1,p2),p1)
 	rr = distance(ehehe(p1,p2),Luxor.Point(0,0))
-	Mm1_x = (rr-radius) *cos(M_1[1])
-	Mm1_y = (rr-radius) *sin(M_1[1])
+	Mm1_x = (rr-rad) *cos(M_1[1])
+	Mm1_y = (rr-rad) *sin(M_1[1])
 	
-	Mm2_x = (rr-radius) *cos(M_1[2])
-	Mm2_y = (rr-radius) *sin(M_1[2])
+	Mm2_x = (rr-rad) *cos(M_1[2])
+	Mm2_y = (rr-rad) *sin(M_1[2])
 	#println(M_ehehe)
 	
 	println(neg_count)
 	println(t[2]) 
 	println(M_1[1],M_1[2],M_1[2])
-	return Luxor.Point((rr-radius*5/4)*cos(circular_mean(M)),(rr-radius*5/4)*sin(s*circular_mean(M)))
+	eq = [(rr-rad)*5/4 + radius]/2
+	return Luxor.Point((rr-rad*5/4)*cos(circular_mean(M)),(rr-rad*5/4)*sin(s*circular_mean(M)))
+	# Luxor.Point(eq*cos(circular_mean(M)),eq*sin(circular_mean(M)))]
 	
 	
 	#return Luxor.Point((rr-radius)*cos((mod(M_1[1]+M_1[2],2π))/2),(rr-radius)*sin(sign(M_1[1]+M_1[2])*(mod(M_1[1]+M_1[2],2π))/2))
@@ -581,7 +602,7 @@ function get_or_add_vertex!(G, vertex_dict, triangle, Farey)
     end
 
     # If not found, add a new vertex
-    return add_topovertex!(G, vertex_dict, center)
+    return add_topovertex!(G, vertex_dict, center,triangle,Farey)
 end
 
 
@@ -604,42 +625,56 @@ function equitopograph(m::Int,G)
 	return T
 end
 
+# ╔═╡ 8694f76b-6468-4752-97af-5a376bc5dda1
+equitopograph(1,FareyGraph(1))
+
 # ╔═╡ ef43fcb1-985d-43f1-8081-46252f42c233
-function graphtopo(m::Int)
+function graphtopo(m::Int,radius = 600 	)
 	if m == 1 
 		topo = create_custom_Tgraph()
-		G, vertex_dict = topo
+		G, vertex_dict,triangle_kms= topo
 		T = equitopograph(1,FareyGraph(1))
-		v1 = add_topovertex!(G, vertex_dict,T[1])
-		v2 = add_topovertex!(G, vertex_dict,T[2])
-		add_edge!(G,v1,v2)
+		triangle_kms[centertriangle2([1,2,4],FareyGraph(1))] = Set([Rational(1,1), Rational(0,1), Rational(1,0)])
+        triangle_kms[centertriangle2([2,3,4],FareyGraph(1))] = Set([Rational(1,0), Rational(-1,1), Rational(0,1)])
+		v1 = add_topovertex!(G, vertex_dict,T[1],[1,2,4],FareyGraph(1))
+		v2 = add_topovertex!(G, vertex_dict,T[2],[2,3,4],FareyGraph(1))
+		add_edge!(G,v1[1],v2[1])
 		return topo
 	
 	else
 		Farey = FareyGraph(m)
 		F = graphtopo(m-1)
-		G,vertex_dict = F 
+		G,vertex_dict, triangle_kms = F 
 		T = equitopograph(m,Farey)
 		A = triangleF(m)
 		B = triangleF(m-1)
 		for t in B
 			for p in A  
 				if length(intersect(t,p)) == 2
+					fracs = [first(Farey[2][v]) for v in t]
+					new_frac = Rational(numerator(fracs[1]) + numerator(fracs[2]),
+                                      denominator(fracs[1]) + denominator(fracs[2]))
 					c_i = centertriangle2(t,Farey) #existing vertex
 					c_j = centertriangle2(p,Farey) # new vertex
 					v_i = get_or_add_vertex!(G, vertex_dict, t, Farey)
 					v_j = get_or_add_vertex!(G, vertex_dict, p, Farey)
-
-					add_edge!(G,v_i,v_j)
+					triangle_kms[centertriangle2(t, FareyGraph(m))] = Set(fracs)
+                    add_edge!(G, v_i[1], v_j[1])
 				end 
 			end
 		end 
-		return (G, vertex_dict)
+		return (G, vertex_dict,triangle_kms)
 	end 
 end
 
+# ╔═╡ 62c27a4f-9e4e-4c8d-9157-2e707e2f3ccd
+graphtopo(1)[3]
+
+# ╔═╡ 8c8bd5f5-5923-4dfc-8240-b8ea74fcaaa7
+graphtopo(1)
+
 # ╔═╡ 057884f8-561a-4ee2-b6f1-0d53dbddd500
-gplot(graphtopo(3)[1])
+gplot(graphtopo(4)[1])
 
 # ╔═╡ 6542ecfd-3af9-4b67-ab36-e72fa5c88bb3
 graphtopo(2)
@@ -676,6 +711,15 @@ end
 
 # ╔═╡ 4744189e-a5c9-44b5-96cc-12074f1a599f
 topograph(2,FareyGraph(2))
+
+# ╔═╡ 075a75f9-08c2-4094-a1fd-ae906f932410
+function class(a,b,fraction)
+	x,y = numerator(fraction),denominator(fraction)
+	return a*x^2+b*y^2
+end
+
+# ╔═╡ 86269f5b-5193-4413-8c25-da80ceede18a
+graphtopo(2)[1]
 
 # ╔═╡ 2a04392e-7edf-4b95-8a20-449db0d52a9f
 function plot_farey_graph_with_edges2(m::Int,G)
@@ -764,7 +808,7 @@ function plot_farey_graph_with_edges2(m::Int,G)
 			
             Luxor.arc2r(ehehe, coord2, coord1, :stroke)
         end
-        #circle(ehehe,radius, :stroke)
+        circle(ehehe,radius, :stroke)
 		#println("Drawing edge from $(f_1):$(coord1)  to $(f_2):$(coord2)")
 		#println("Center: $(ehehe),$(radius)")
 
@@ -802,18 +846,25 @@ end
 end
 
 # ╔═╡ 7af51bfa-a1cf-4c82-95f4-05a22d58394c
-
-
-# ╔═╡ 5a4c136f-5010-46ce-a762-7ee8c4e111fd
-begin 
-a = Luxor.Point(2,3)
-b = Luxor.Point(4,5)
-print(centroid(1,a,b))
+function middlefinger(p1,p2,G)
+	p,dict = G 
+	a = first(dict[p1])
+	b = first(dict[p2])
+	n_a,d_a = numerator(a),denominator(a)
+	n_b,d_b = numerator(b),denominator(b)
+	m = Rational(n_a+n_b,d_a,d_b)
+	mp = Luxor.Point(equi_angle(m))
 end
 
-# ╔═╡ 75716b9c-e00c-4557-b509-aaf6e3e50100
-println(centertriangle(triangleF(1)[1],FareyGraph(1)),centertriangle(triangleF(1)[2],FareyGraph(1)))
-
+# ╔═╡ d669435a-c512-4f97-80db-e1f8cc018d7b
+begin 
+	p,Dictf = graphtopo(2)
+	Dictm = FareyGraph(2)[2]
+	for e in edges(p)
+		println(e)
+	end
+	
+end
 
 # ╔═╡ 5c263bac-5fb6-49d6-b38d-2b067c4517e7
 function plot_farey_graph_with_edges2equi(m::Int,G)
@@ -836,7 +887,7 @@ function plot_farey_graph_with_edges2equi(m::Int,G)
     i = 1
     Topo = equitopograph(m,G)
 	#Topo = topograph(m,G)
-	T,DictT = graphtopo(m)
+	T,DictT,triangle = graphtopo(m, my_radius)
 	
 	setline(3)
     for t in Topo #loops over every new triangle 
@@ -902,7 +953,7 @@ function plot_farey_graph_with_edges2equi(m::Int,G)
 			
             Luxor.arc2r(ehehe, coord1, coord2, :stroke)
         end
-        #circle(ehehe,radius, :stroke)
+    	|#circle(ehehe,radius, :stroke)
 		#println("Drawing edge from $(f_1):$(coord1)  to $(f_2):$(coord2)")
 		#println("Center: $(ehehe),$(radius)")
 
@@ -912,25 +963,65 @@ function plot_farey_graph_with_edges2equi(m::Int,G)
 	
 	
 	for e in edges(T)
-		c1 = DictT[src(e)]
-		c2 = DictT[dst(e)]
+		c1 = first(DictT[src(e)])
+		c2 = first(DictT[dst(e)])
+		c1x, c1y = c1
+
+		c2x, c2y = c2
 		println(first(c1))
 		println(first(c2))
 		setcolor("red")
+		#i have an issue here
+		d = distance(c2,Luxor.Point(0,0))
+		angle = atan(c1y,c1x)
+		angle2 = atan(c2y,c2x)
+		rr = d
+		m =  circular_mean([angle,angle2])
+		#circle(Luxor.Point(rr*cos(angle),rr*sign(c1y*c2y)*sin(angle)),10,:fill)
+		#println(src(e)+ "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+		setcolor("green")
+		fontsize(30)
+		c1x, c1y = c1 
+		mouawahaha = sort(collect(triangle[c1]))
+		if mouawahaha[1] == Rational(-1,0) && mouawahaha[2]>=0 && mouawahaha[3]>=0 
+	    	
+			mouawahaha[1] = Rational(1,0)
+			mouawahaha = sort(mouawahaha)
+		end
 		
-		line(first(c1),first(c2),:stroke)
+		imhungry = Rational(numerator(mouawahaha[1]) + numerator(mouawahaha[3]),
+                                      denominator(mouawahaha[1])+denominator(mouawahaha[3])) 
+	
+		
+		caca = Luxor.Point(my_radius*cos(angle),my_radius*sin(angle))
+		pp = " " *string(class(1,1,imhungry))
+		setline(5)
+		#pp = string(mouawahaha)
+		#i need to figure out the fraction corresponding to the position of its topograph vertex (the line i wrote is wrong)
+		#string(class(1,1,DictG[src(e)]))
+		Luxor.text(pp,Luxor.Point(rr*cos(angle),rr*sin(angle)),halign=:center,valign=:middle)
+		#end of issue
+		#line(first(c2),Luxor.Point(d*,d*,:stroke)
+		line(c1,c2,:stroke)
 		setcolor("black")
 		
 	end 
+	setcolor("green")
+	fontsize(30)
+	fontface("bold") 
+	Luxor.text("1",Luxor.Point(my_radius/2,0),halign=:center,valign=:middle)
+	Luxor.text("1",Luxor.Point(-my_radius/2,0),halign=:center,valign=:middle)
+	setcolor("black")
 	for (k, pts) in DictG
         angle_rad = equi_angle(pts)
         coord_x = my_radius * cos(angle_rad)
         coord_y = my_radius * sin(angle_rad)
 
-        circle(Luxor.Point(coord_x, coord_y), 3, :fill)
-
+       circle(Luxor.Point(coord_x, coord_y), 3, :fill)
+		#here i add label for topograph values 
+		
         # Calculate text position
-        text_radius = my_radius + 40
+        text_radius = my_radius +40
         coord_textx = text_radius * cos(angle_rad)
         coord_texty = text_radius * sin(angle_rad)
 
@@ -945,13 +1036,16 @@ function plot_farey_graph_with_edges2equi(m::Int,G)
         end
 
         # Add text
-        fontsize(20)
+        fontsize(30)
         Luxor.text(label, Luxor.Point(coord_textx, coord_texty), halign=:center, valign=:middle)
          
     end
 	finish()
 end
 end
+
+# ╔═╡ aa8e7bb7-2e80-403a-9c12-7c8dafaa2dce
+FareyGraph(2)[2][1]
 
 # ╔═╡ 281c7482-bd09-488e-b28f-a086b8ba3810
 function plot_farey_graph_with_edges3(m::Int,G)
@@ -1169,7 +1263,7 @@ function plot_farey_graph(ax, m::Int, radius::Float64,n)
     Edges = edges(graph)
 
     # Plot main circle
-    θ = range(0, 2π, length=100)
+    θ = range(0, 2π, length=120)
     circle_x = radius .* cos.(θ)
     circle_y = radius .* sin.(θ)
 	
@@ -1310,6 +1404,22 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
         # Add text
         text!(ax, label, position = (coord_textx, coord_texty), align = (:center, :center), fontsize = 14)
     end
+	#topograph shenanigans imagine it works first try loool 
+	
+    # Plot topograph centers and edges
+    T, DictT = graphtopo(m)
+    centers = [first(DictT[v]) for v in Graphs.vertices(T)]  # <-- Add Graphs. prefix
+    xs = [c.x for c in centers]
+    ys = [c.y for c in centers]
+    Makie.scatter!(ax, xs, ys, color=:red, markersize=5)
+
+    for e in Graphs.edges(T)  # <-- Also qualify edges if needed
+        v1 = Graphs.src(e)
+        v2 = Graphs.dst(e)
+        p1 = first(DictT[v1])
+        p2 = first(DictT[v2])
+        lines!(ax, [p1.x, p2.x], [p1.y, p2.y], color=:red, linewidth=2)
+    end
 
     # Draw arcs for edges
     for e in Edges
@@ -1363,6 +1473,40 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
         # Draw the circle if valid
         
     end
+	   # Plot topograph centers and edges
+    T, DictT, triangle_kms = graphtopo(m)
+    centers = [first(DictT[v]) for v in Graphs.vertices(T)]
+    xs = [c.x for c in centers]
+    ys = [c.y for c in centers]
+    GLMakie.scatter!(ax, xs, ys, color=:red, markersize=5)
+
+    for e in Graphs.edges(T)
+        v1 = Graphs.src(e)
+        v2 = Graphs.dst(e)
+        p1 = first(DictT[v1])
+        p2 = first(DictT[v2])
+        lines!(ax, [p1.x, p2.x], [p1.y, p2.y], color=:red, linewidth=2)
+    end
+
+    # Add class values as text
+   """ for center in centers
+        fractions = sort(collect(triangle_kms[center]))
+        if !isempty(fractions)
+            # Handle -∞ case
+            if fractions[1] == Rational(-1, 0) && fractions[2] >= 0 && fractions[3] >= 0
+                fractions[1] = Rational(1, 0)
+                fractions = sort(fractions)
+            end
+            # Calculate mediant of first and third fractions
+            mediant = Rational(numerator(fractions[1]) + numerator(fractions[3]),
+                            denominator(fractions[1]) + denominator(fractions[3]))
+            class_val = class(1, 1, mediant)
+            text!(ax, string(class_val), 
+                 position=(center.x, center.y), 
+                 align=(:center, :center), 
+                 fontsize=14)
+        end
+    end """
 
     hidedecorations!(ax)
     hidespines!(ax)
@@ -1430,6 +1574,7 @@ Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 GeometryTypes = "4d00f742-c7ba-57c2-abde-4428a4b178cb"
 GraphPlot = "a2cc645c-3eea-5389-862e-a155d0052231"
+Graphics = "a2bd30eb-e257-5431-a919-1863eab51364"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Luxor = "ae8d54c2-7ccd-5906-9d76-62fc9837b5bc"
@@ -1439,13 +1584,14 @@ SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 
 [compat]
 Colors = "~0.12.11"
-GLMakie = "~0.10.5"
+GLMakie = "~0.11.2"
 GeometryTypes = "~0.8.5"
 GraphPlot = "~0.5.2"
+Graphics = "~1.1.3"
 Graphs = "~1.9.0"
 Luxor = "~4.1.0"
-Plots = "~1.40.5"
-PlutoUI = "~0.7.59"
+Plots = "~1.40.9"
+PlutoUI = "~0.7.61"
 SimpleWeightedGraphs = "~1.4.0"
 """
 
@@ -1455,7 +1601,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "bc1e45b7eefbe705dd40eb83cfe9d4efa63b806d"
+project_hash = "ac605be5b6a6868465d3d1483522480a9bedb6d0"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1906,9 +2052,9 @@ version = "3.4.0+2"
 
 [[deps.GLMakie]]
 deps = ["ColorTypes", "Colors", "FileIO", "FixedPointNumbers", "FreeTypeAbstraction", "GLFW", "GeometryBasics", "LinearAlgebra", "Makie", "Markdown", "MeshIO", "ModernGL", "Observables", "PrecompileTools", "Printf", "ShaderAbstractions", "StaticArrays"]
-git-tree-sha1 = "8753fba3356131357b5cd02500fe80c3668535d0"
+git-tree-sha1 = "487ffeede54553565023a107529434ff585060ae"
 uuid = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
-version = "0.10.18"
+version = "0.11.2"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Preferences", "Printf", "Qt6Wayland_jll", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "p7zip_jll"]
@@ -1934,10 +2080,10 @@ uuid = "cf35fbd7-0cd7-5166-be24-54bfbe79505f"
 version = "1.4.1"
 
 [[deps.GeometryBasics]]
-deps = ["EarCut_jll", "Extents", "GeoInterface", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "b62f2b2d76cee0d61a2ef2b3118cd2a3215d3134"
+deps = ["EarCut_jll", "Extents", "GeoInterface", "IterTools", "LinearAlgebra", "PrecompileTools", "Random", "StaticArrays"]
+git-tree-sha1 = "f0895e73ba6c469ec8efaa13712eb5ee1a3647a3"
 uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-version = "0.4.11"
+version = "0.5.2"
 
 [[deps.GeometryTypes]]
 deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "StaticArrays"]
@@ -2393,16 +2539,16 @@ uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.15"
 
 [[deps.Makie]]
-deps = ["Animations", "Base64", "CRC32c", "ColorBrewer", "ColorSchemes", "ColorTypes", "Colors", "Contour", "Dates", "DelaunayTriangulation", "Distributions", "DocStringExtensions", "Downloads", "FFMPEG_jll", "FileIO", "FilePaths", "FixedPointNumbers", "Format", "FreeType", "FreeTypeAbstraction", "GeometryBasics", "GridLayoutBase", "ImageBase", "ImageIO", "InteractiveUtils", "Interpolations", "IntervalSets", "InverseFunctions", "Isoband", "KernelDensity", "LaTeXStrings", "LinearAlgebra", "MacroTools", "MakieCore", "Markdown", "MathTeXEngine", "Observables", "OffsetArrays", "Packing", "PlotUtils", "PolygonOps", "PrecompileTools", "Printf", "REPL", "Random", "RelocatableFolders", "Scratch", "ShaderAbstractions", "Showoff", "SignedDistanceFields", "SparseArrays", "Statistics", "StatsBase", "StatsFuns", "StructArrays", "TriplotBase", "UnicodeFun", "Unitful"]
-git-tree-sha1 = "be3051d08b78206fb5e688e8d70c9e84d0264117"
+deps = ["Animations", "Base64", "CRC32c", "ColorBrewer", "ColorSchemes", "ColorTypes", "Colors", "Contour", "Dates", "DelaunayTriangulation", "Distributions", "DocStringExtensions", "Downloads", "FFMPEG_jll", "FileIO", "FilePaths", "FixedPointNumbers", "Format", "FreeType", "FreeTypeAbstraction", "GeometryBasics", "GridLayoutBase", "ImageBase", "ImageIO", "InteractiveUtils", "Interpolations", "IntervalSets", "InverseFunctions", "Isoband", "KernelDensity", "LaTeXStrings", "LinearAlgebra", "MacroTools", "MakieCore", "Markdown", "MathTeXEngine", "Observables", "OffsetArrays", "PNGFiles", "Packing", "PlotUtils", "PolygonOps", "PrecompileTools", "Printf", "REPL", "Random", "RelocatableFolders", "Scratch", "ShaderAbstractions", "Showoff", "SignedDistanceFields", "SparseArrays", "Statistics", "StatsBase", "StatsFuns", "StructArrays", "TriplotBase", "UnicodeFun", "Unitful"]
+git-tree-sha1 = "9680336a5b67f9f9f6eaa018f426043a8cd68200"
 uuid = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
-version = "0.21.18"
+version = "0.22.1"
 
 [[deps.MakieCore]]
 deps = ["ColorTypes", "GeometryBasics", "IntervalSets", "Observables"]
-git-tree-sha1 = "9019b391d7d086e841cbeadc13511224bd029ab3"
+git-tree-sha1 = "c731269d5a2c85ffdc689127a9ba6d73e978a4b1"
 uuid = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
-version = "0.8.12"
+version = "0.9.0"
 
 [[deps.MappedArrays]]
 git-tree-sha1 = "2dab0221fe2b0f2cb6754eaa743cc266339f527e"
@@ -2438,9 +2584,9 @@ version = "0.3.2"
 
 [[deps.MeshIO]]
 deps = ["ColorTypes", "FileIO", "GeometryBasics", "Printf"]
-git-tree-sha1 = "14a12d9153b1a1a22d669eede58b2ea2164ff138"
+git-tree-sha1 = "0644638417afafeceab065fc96ba5590538f966f"
 uuid = "7269a6da-0436-5bbc-96c2-40638cbb6118"
-version = "0.4.13"
+version = "0.5.2"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -2551,9 +2697,9 @@ uuid = "91d4177d-7536-5919-b921-800302f37372"
 version = "1.3.3+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "12f1439c4f986bb868acda6ea33ebc78e19b95ad"
+git-tree-sha1 = "cc4054e898b852042d7b503313f7ad03de99c3dd"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.7.0"
+version = "1.8.0"
 
 [[deps.PCRE2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2838,10 +2984,10 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 version = "1.11.0"
 
 [[deps.ShaderAbstractions]]
-deps = ["ColorTypes", "FixedPointNumbers", "GeometryBasics", "LinearAlgebra", "Observables", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "79123bc60c5507f035e6d1d9e563bb2971954ec8"
+deps = ["ColorTypes", "FixedPointNumbers", "GeometryBasics", "LinearAlgebra", "Observables", "StaticArrays"]
+git-tree-sha1 = "818554664a2e01fc3784becb2eb3a82326a604b6"
 uuid = "65257c39-d410-5151-9873-9b3e5be5013e"
-version = "0.4.1"
+version = "0.5.0"
 
 [[deps.SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
@@ -2971,9 +3117,9 @@ weakdeps = ["ChainRulesCore", "InverseFunctions"]
 
 [[deps.StructArrays]]
 deps = ["ConstructionBase", "DataAPI", "Tables"]
-git-tree-sha1 = "9537ef82c42cdd8c5d443cbc359110cbb36bae10"
+git-tree-sha1 = "5a3a31c41e15a1e042d60f2f4942adccba05d3c9"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.21"
+version = "0.7.0"
 
     [deps.StructArrays.extensions]
     StructArraysAdaptExt = "Adapt"
@@ -3441,11 +3587,13 @@ version = "1.4.1+2"
 # ╔═╡ Cell order:
 # ╠═15f0e8a0-59e4-11ef-288b-17fd5d6af339
 # ╠═42a780fe-1659-4d9b-b900-3321ce025dd6
+# ╠═eca31c81-2550-4173-a3e9-54cc846c59bf
 # ╠═0dfb78a9-a549-4c56-92f5-f4e5aa6f26d5
 # ╠═68057bda-5823-4e28-8a56-cfdfedb15e5d
 # ╠═70d7cb70-f755-4241-bbbd-77852f0b99d5
 # ╠═45bfc816-5d43-4e01-bc92-21c8d84875b8
 # ╠═8f8fd768-7865-46b4-9d65-c40a88ca3026
+# ╠═443470c5-e7a7-4453-922b-d89c9eb6a219
 # ╠═817a2afb-3845-4cc7-bf9d-cb6f78b50de6
 # ╠═ded767d6-493f-40af-bba6-7f3bd5f9b57a
 # ╠═2c41b5bc-794a-432e-8076-5be96de4bc70
@@ -3456,7 +3604,10 @@ version = "1.4.1+2"
 # ╠═19de3b41-8ecd-42e3-aec4-c8cfe2b49252
 # ╠═b805dc62-7e80-486b-a6b5-fbd50a235eda
 # ╠═2704e360-a0f7-40b0-b8e2-5f138a6ba3e0
+# ╠═8694f76b-6468-4752-97af-5a376bc5dda1
+# ╠═62c27a4f-9e4e-4c8d-9157-2e707e2f3ccd
 # ╠═ef43fcb1-985d-43f1-8081-46252f42c233
+# ╠═8c8bd5f5-5923-4dfc-8240-b8ea74fcaaa7
 # ╠═e044aa46-f754-4e02-a917-f982ac7a66c1
 # ╠═057884f8-561a-4ee2-b6f1-0d53dbddd500
 # ╠═6542ecfd-3af9-4b67-ab36-e72fa5c88bb3
@@ -3517,12 +3668,14 @@ version = "1.4.1+2"
 # ╠═fc843fa7-0fd5-4a40-b1cb-09e4d1af9d90
 # ╠═21fc5e84-84e3-40e7-b0ed-ebb677a5708a
 # ╠═4744189e-a5c9-44b5-96cc-12074f1a599f
+# ╠═075a75f9-08c2-4094-a1fd-ae906f932410
+# ╠═86269f5b-5193-4413-8c25-da80ceede18a
 # ╠═a50a49c4-a0a2-4a10-ae8d-456d14570490
 # ╠═2a04392e-7edf-4b95-8a20-449db0d52a9f
 # ╠═7af51bfa-a1cf-4c82-95f4-05a22d58394c
-# ╠═5a4c136f-5010-46ce-a762-7ee8c4e111fd
-# ╠═75716b9c-e00c-4557-b509-aaf6e3e50100
+# ╠═d669435a-c512-4f97-80db-e1f8cc018d7b
 # ╠═5c263bac-5fb6-49d6-b38d-2b067c4517e7
+# ╠═aa8e7bb7-2e80-403a-9c12-7c8dafaa2dce
 # ╟─281c7482-bd09-488e-b28f-a086b8ba3810
 # ╟─16a0c42f-63da-40ae-9fc7-a2eccae6b34a
 # ╠═7575e497-e2c4-4526-8c88-f99509a7270a
