@@ -17,7 +17,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 42a780fe-1659-4d9b-b900-3321ce025dd6
-using Luxor, PlutoUI, Colors, SimpleWeightedGraphs, Graphs, GraphPlot, Plots, GLMakie, LinearAlgebra
+using Luxor, PlutoUI, Colors, SimpleWeightedGraphs, Graphs, GraphPlot, Plots, GLMakie, LinearAlgebra, Memoize
 
 # ╔═╡ eca31c81-2550-4173-a3e9-54cc846c59bf
 using Graphics:center 
@@ -448,7 +448,7 @@ end
   ╠═╡ =#
 
 # ╔═╡ 337898fd-a0a0-44fd-a311-fbc7d02e7cf6
-my_radius = 600
+my_radius = 600.0
 
 # ╔═╡ 714d4bcd-1e57-4ac0-b0ab-69b3532d4e58
 function tangent_line(x0, y0, h, k, r)
@@ -1293,7 +1293,7 @@ function plot_farey_graph(ax, m::Int, radius::Float64,n)
         end
 
         # Add text
-        text!(ax, label, position = (coord_textx, coord_texty), align = (:center, :center), fontsize = 14)
+        text!(ax, label, position = (coord_textx, coord_texty), align = (:center, :center), fontsize = 20)
     end
 
     # Draw arcs for edges
@@ -1402,12 +1402,12 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
         end
 
         # Add text
-        text!(ax, label, position = (coord_textx, coord_texty), align = (:center, :center), fontsize = 14)
+        text!(ax, label, position = (coord_textx, coord_texty), align = (:center, :center), fontsize = 14,color= :purple)
     end
 	#topograph shenanigans imagine it works first try loool 
 	
     # Plot topograph centers and edges
-    T, DictT = graphtopo(m)
+    T, DictT,triangle = graphtopo(m)
     centers = [first(DictT[v]) for v in Graphs.vertices(T)]  # <-- Add Graphs. prefix
     xs = [c.x for c in centers]
     ys = [c.y for c in centers]
@@ -1418,6 +1418,25 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
         v2 = Graphs.dst(e)
         p1 = first(DictT[v1])
         p2 = first(DictT[v2])
+		c1x, c1y = p1 
+		c2x, c2y = p2 
+		d = distance( p2,Luxor.Point(0,0))
+		angle = atan(c1y,c1x)
+		mouawahaha = sort(collect(triangle[p1]))
+		if mouawahaha[1] == Rational(-1,0) && mouawahaha[2]>=0 && mouawahaha[3]>=0 
+	    	
+			mouawahaha[1] = Rational(1,0)
+			mouawahaha = sort(mouawahaha)
+		end
+		
+		imhungry = Rational(numerator(mouawahaha[1]) + numerator(mouawahaha[3]),
+                                      denominator(mouawahaha[1])+denominator(mouawahaha[3])) 
+		caca = ((d)*cos(angle),(d)*sin(angle))
+		pp = string(class(1,1,imhungry))
+		text!(ax, pp, 
+                 position=caca, 
+                 align=(:center, :center), 
+                 fontsize=14)
         lines!(ax, [p1.x, p2.x], [p1.y, p2.y], color=:red, linewidth=2)
     end
 
@@ -1489,7 +1508,7 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
     end
 
     # Add class values as text
-   """ for center in centers
+    """for center in centers
         fractions = sort(collect(triangle_kms[center]))
         if !isempty(fractions)
             # Handle -∞ case
@@ -1507,7 +1526,14 @@ function plot_farey_graph_equi(ax, m::Int, radius::Float64,n)
                  fontsize=14)
         end
     end """
-
+    text!(ax, "1", 
+                 position=(my_radius/2, 0), 
+                 align=(:center, :center), 
+                 fontsize=30,color= :purple)
+	text!(ax, "1", 
+                 position=(-my_radius/2, 0), 
+                 align=(:center, :center), 
+                 fontsize=30,color= :purple)
     hidedecorations!(ax)
     hidespines!(ax)
     Makie.xlims!(ax, -radius * 1.2, radius * 1.2)
@@ -1519,7 +1545,7 @@ function interactive_farey_graph()
     fig = Figure(size = (1920,1080))
     ax = Axis(fig[1, 1:3], aspect = DataAspect())  # Span the axis across more space
     
-    m_slider = Makie.Slider(fig[2, 2], range = 1:20, startvalue = 1)
+    m_slider = Makie.Slider(fig[2, 2], range = 1:20, startvalue = 8)
     n_slider = Makie.Slider(fig[3, 2], range = 1:2, startvalue = 1)
     both_toggle = Toggle(fig[2:3, 3], active = false)  # Toggle button on the side
     m_label = Label(fig[2, 1], "m:")
@@ -1529,10 +1555,10 @@ function interactive_farey_graph()
     function update_plot(m, n, both_active)
         empty!(ax)  # Clear the axis before plotting
         if both_active
-            plot_farey_graph_equi(ax, m, 500.0, 1)
-            plot_farey_graph_equi(ax, m, 500.0, 2)
+            plot_farey_graph_equi(ax, m, my_radius, 1)
+            plot_farey_graph_equi(ax, m, my_radius, 2)
         else
-            plot_farey_graph_equi(ax, m, 500.0, n)
+            plot_farey_graph_equi(ax, m, my_radius, n)
         end
     end
     
@@ -1578,6 +1604,7 @@ Graphics = "a2bd30eb-e257-5431-a919-1863eab51364"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Luxor = "ae8d54c2-7ccd-5906-9d76-62fc9837b5bc"
+Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 SimpleWeightedGraphs = "47aef6b3-ad0c-573a-a1e2-d07658019622"
@@ -1590,6 +1617,7 @@ GraphPlot = "~0.5.2"
 Graphics = "~1.1.3"
 Graphs = "~1.9.0"
 Luxor = "~4.1.0"
+Memoize = "~0.4.4"
 Plots = "~1.40.9"
 PlutoUI = "~0.7.61"
 SimpleWeightedGraphs = "~1.4.0"
@@ -1601,7 +1629,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.3"
 manifest_format = "2.0"
-project_hash = "ac605be5b6a6868465d3d1483522480a9bedb6d0"
+project_hash = "1afc5ba90855b2d39f8859e716dbdc54cb3553f6"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -2581,6 +2609,12 @@ version = "2.28.6+0"
 git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
 uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.2"
+
+[[deps.Memoize]]
+deps = ["MacroTools"]
+git-tree-sha1 = "2b1dfcba103de714d31c033b5dacc2e4a12c7caa"
+uuid = "c03570c3-d221-55d1-a50c-7939bbd78826"
+version = "0.4.4"
 
 [[deps.MeshIO]]
 deps = ["ColorTypes", "FileIO", "GeometryBasics", "Printf"]
